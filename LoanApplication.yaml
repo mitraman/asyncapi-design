@@ -1,0 +1,112 @@
+asyncapi: 2.0.0
+info:
+  title: Loan Application
+  version: '1.0.0'
+  description: |
+    Loan application domain events
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  production:
+    url: azure.instance.kafka.server.com
+    protocol: Kafka-secure
+    description: Location of the kafka server for this integration
+
+defaultContentType: application/json
+
+channels:
+  /loanapplication/validated:
+    description: A kafka topic for loan application validate events (TBD - what does "validated" mean in this domain?)
+    publish:
+      summary: Notify that a loan has been validated
+      operationId: loanApplicationValidated
+      message:
+        $ref: '#/components/messages/loanApplicationValidated'
+    subscribe:
+      summary: Receive requests to transmit notifications.
+      operationId: receiveLoanValidations
+      message:
+        $ref: '#/components/messages/loanApplicationValidated'
+
+  /loanapplication/agreementGenerated:
+    description: A kafka topic for loan agreement generation events
+    publish:
+      summary: Notifies that a loan agreement has been generated and provides details of the agreement 
+      operationId: loanAgreementGenerated
+      message:
+        $ref: '#/components/messages/loanAgreementGenerated'
+    subscribe:
+      summary: Receive requests to transmit notifications.
+      operationId: receiveNewLoanAgreements
+      message:
+        $ref: '#/components/messages/loanAgreementGenerated'
+
+components:
+  messages:
+    loanApplicationValidated:
+      name: loanApplicationValidated
+      title: Loan application status
+      summary: Provides information about a loan application after it has been validated.
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/loanApplicationValidated"
+
+    loanAgreementGenerated:
+      name: loanAgreement
+      title: Loan agreement 
+      summary: Details of a loan agreement that has been generated
+      contentType: application/json
+      payload:
+        $ref: "#/components/schemas/loanAgreement"
+  schemas:
+    loanApplicationValidated:
+      type: object
+      properties:
+        applicationId:
+          type: string          
+          description: A unique ID for the loan application
+        applicationURL:
+          type: string
+          description: URL of the service that can provide details for this application
+        customerID:
+          type: string          
+          description: A unique ID for the customer who made the application
+        approvalSystemComponent:
+          type: string
+          description: The capabilitiy provider that approved the application        
+        validation-datetime:
+          type: string
+          format: date-time
+          description: The time at which this loan application was validated
+        validation-status:
+          type: string
+          description: The synchronized status of the application in the system as of the event generation time
+          enum:
+            - complete
+            - pending
+        sentAt:
+          $ref: "#/components/schemas/sentAt"
+
+    loanAgreement:
+      type: object
+      properties:
+        party:
+          type: string
+          description: The party that the loan agreement was made with
+        agreement:
+          $ref: "#/components/schemas/loanAgreementDetails"
+        sentAt:
+          $ref: "#/components/schemas/sentAt"
+
+    loanAgreementDetails:
+      type: object
+      properties:
+        placeholder:
+          type: string
+          description: This object should detail enough agreement properties for systems that need to take action when they subscribe
+    sentAt:
+      type: string
+      format: date-time
+      description: Date and time when the message was sent.
